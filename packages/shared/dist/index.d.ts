@@ -39,7 +39,10 @@ export interface IQuestion {
     text: string;
     difficulty: 'Easy' | 'Moderate' | 'Hard';
     marks: number;
-    options?: { label: string; text: string }[];
+    options?: {
+        label: string;
+        text: string;
+    }[];
 }
 export interface ISection {
     title: string;

@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // 'standalone' output is used for Docker/self-hosted deployments.
+  // On Vercel, this is handled automatically — only enable for non-Vercel builds.
+  ...(process.env.VERCEL ? {} : { output: 'standalone' }),
 
   // Forward public environment variables to the browser bundle
   env: {
@@ -11,7 +13,8 @@ const nextConfig = {
   images: {
     domains: [
       'localhost',
-      // Add your production API domain here, e.g. 'api.vedaai.com'
+      'vedaai-api-xdg3.onrender.com',
+      'lh3.googleusercontent.com', // Google OAuth avatars
     ],
   },
 };
