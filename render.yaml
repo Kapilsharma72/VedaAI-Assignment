@@ -7,7 +7,7 @@ services:
     rootDir: .
     buildCommand: corepack disable && npm install && npx turbo run build --filter=@vedaai/api
     startCommand: node apps/api/dist/server.js
-    healthCheckPath: /
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production

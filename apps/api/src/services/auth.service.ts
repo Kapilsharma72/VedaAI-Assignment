@@ -130,10 +130,11 @@ export async function getMe(userId: string): Promise<IUser> {
   return toIUser(doc);
 }
 
+/** Cross-origin frontends (e.g. Vercel) require SameSite=None cookies on the API domain. */
 export const tokenCookieOptions = {
   httpOnly: true,
-  sameSite: 'lax' as const,
+  sameSite: (env.isProduction ? 'none' : 'lax') as 'lax' | 'none',
   path: '/',
-  maxAge: JWT_MAX_AGE_SECONDS,
-  secure: process.env.NODE_ENV === 'production',
+  maxAge: JWT_MAX_AGE_SECONDS * 1000,
+  secure: env.isProduction,
 };

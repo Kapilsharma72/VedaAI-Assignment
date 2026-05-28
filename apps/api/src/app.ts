@@ -13,7 +13,14 @@ import { HttpError } from './utils/errors';
 
 const app = express();
 
+// Required behind Render/Vercel proxies for secure cookies and rate-limit IP detection.
+app.set('trust proxy', 1);
+
 app.use(helmet());
+
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 const frontendUrl = process.env['FRONTEND_URL'];
 

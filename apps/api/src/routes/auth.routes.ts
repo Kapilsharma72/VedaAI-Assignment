@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import * as authService from '../services/auth.service';
+import env from '../config/env';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -103,9 +104,9 @@ router.get(
 router.post('/logout', (_req: Request, res: Response): void => {
   res.clearCookie('token', {
     httpOnly: true,
-    sameSite: 'lax',
+    sameSite: env.isProduction ? 'none' : 'lax',
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.isProduction,
   });
 
   res.status(200).json({

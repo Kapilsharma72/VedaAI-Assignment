@@ -1,6 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && npm ci && npx turbo run build --filter=@vedaai/web",
-  "outputDirectory": ".next",
-  "installCommand": "echo 'install handled by buildCommand'"
+  "buildCommand": "cd ../.. && npm install && npx turbo run build --filter=@vedaai/web",
+  "installCommand": "cd ../.. && npm install"
 }

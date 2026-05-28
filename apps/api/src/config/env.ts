@@ -22,8 +22,18 @@ export interface EnvConfig {
   GOOGLE_CLIENT_SECRET: string;
   FRONTEND_URL: string;
   GEMINI_API_KEY: string;
+  API_URL: string;
   PORT: number;
+  isProduction: boolean;
 }
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+/** Public base URL of this API (used for OAuth callbacks). Render sets RENDER_EXTERNAL_URL automatically. */
+const apiUrl = optionalEnv(
+  'API_URL',
+  process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5000',
+).replace(/\/$/, '');
 
 const env: EnvConfig = {
   MONGO_URI: requireEnv('MONGO_URI'),
@@ -31,9 +41,11 @@ const env: EnvConfig = {
   JWT_SECRET: requireEnv('JWT_SECRET'),
   GOOGLE_CLIENT_ID: requireEnv('GOOGLE_CLIENT_ID'),
   GOOGLE_CLIENT_SECRET: requireEnv('GOOGLE_CLIENT_SECRET'),
-  FRONTEND_URL: requireEnv('FRONTEND_URL'),
+  FRONTEND_URL: requireEnv('FRONTEND_URL').replace(/\/$/, ''),
   GEMINI_API_KEY: requireEnv('GEMINI_API_KEY'),
+  API_URL: apiUrl,
   PORT: parseInt(optionalEnv('PORT', '5000'), 10),
+  isProduction,
 };
 
 export default env;

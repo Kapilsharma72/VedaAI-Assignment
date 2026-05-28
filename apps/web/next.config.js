@@ -11,10 +11,10 @@ const nextConfig = {
   },
 
   images: {
-    domains: [
-      'localhost',
-      'vedaai-api-xdg3.onrender.com',
-      'lh3.googleusercontent.com', // Google OAuth avatars
+    remotePatterns: [
+      { protocol: 'https', hostname: '**.onrender.com' },
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
 };

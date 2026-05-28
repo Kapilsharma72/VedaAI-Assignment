@@ -4,17 +4,17 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import * as authService from '../services/auth.service';
 import env from './env';
 
-const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-
 export function setupPassport(app: Express): void {
   app.use(passport.initialize());
+
+  const googleCallbackUrl = `${env.API_URL}/api/auth/google/callback`;
 
   passport.use(
     new GoogleStrategy(
       {
         clientID: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
-        callbackURL: '/api/auth/google/callback',
+        callbackURL: googleCallbackUrl,
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {
@@ -36,20 +36,23 @@ export function setupPassport(app: Express): void {
     '/api/auth/google/callback',
     passport.authenticate('google', {
       session: false,
-      failureRedirect: '/login?error=oauth_failed',
+      failureRedirect: `${env.FRONTEND_URL}/login?error=oauth_failed`,
     }),
     (req: Request, res: Response, _next: NextFunction): void => {
       const { token } = req.user as { token: string };
 
       res.cookie('token', token, {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: env.isProduction ? 'none' : 'lax',
         path: '/',
-        maxAge: COOKIE_MAX_AGE_MS,
-        secure: process.env['NODE_ENV'] === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        secure: env.isProduction,
       });
 
-      res.redirect(`${env.FRONTEND_URL}/assignments`);
+      // Pass token to the frontend so it can set a same-origin cookie for Next.js middleware.
+      const callbackUrl = new URL('/auth/callback', env.FRONTEND_URL);
+      callbackUrl.searchParams.set('token', token);
+      res.redirect(callbackUrl.toString());
     },
   );
 }

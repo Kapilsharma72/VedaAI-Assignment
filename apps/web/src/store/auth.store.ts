@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { IUser } from '@vedaai/shared';
+import { clearFrontendSession } from '@/lib/session';
 
 interface AuthStore {
   user: IUser | null;
@@ -20,7 +21,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
         credentials: 'include',
       });
     } catch {
-    
+      // API logout is best-effort when offline
+    }
+    try {
+      await clearFrontendSession();
+    } catch {
+      // Frontend session clear is best-effort
     }
     set({ user: null });
   },

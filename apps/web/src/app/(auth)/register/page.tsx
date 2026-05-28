@@ -8,8 +8,14 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 
 import api, { ApiError } from '@/lib/api';
+import { setFrontendSession } from '@/lib/session';
 import { useAuthStore } from '@/store/auth.store';
 import type { IUser } from '@vedaai/shared';
+
+interface AuthResponse {
+  user: IUser;
+  token: string;
+}
 
 const registerSchema = z.object({
   name: z
@@ -53,8 +59,9 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     try {
-      const user = await api.post<IUser>('/api/auth/register', data);
-      setUser(user as unknown as IUser);
+      const { user, token } = (await api.post('/api/auth/register', data)) as AuthResponse;
+      await setFrontendSession(token);
+      setUser(user);
       toast.success('Account created successfully!');
       router.push('/assignments');
     } catch (err) {

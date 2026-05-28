@@ -8,8 +8,14 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 
 import api, { ApiError } from '@/lib/api';
+import { setFrontendSession } from '@/lib/session';
 import { useAuthStore } from '@/store/auth.store';
 import type { IUser } from '@vedaai/shared';
+
+interface AuthResponse {
+  user: IUser;
+  token: string;
+}
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
@@ -34,8 +40,9 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     try {
-      const user = await api.post<IUser>('/api/auth/login', data);
-      setUser(user as unknown as IUser);
+      const { user, token } = (await api.post('/api/auth/login', data)) as AuthResponse;
+      await setFrontendSession(token);
+      setUser(user);
       router.push('/assignments');
     } catch (err) {
       const message =
