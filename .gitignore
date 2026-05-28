@@ -3,11 +3,14 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build outputs
-dist/
+# Build outputs - exclude app builds but keep shared package dist
+apps/api/dist/
+apps/web/.next/
+apps/web/out/
 build/
-.next/
-out/
+
+# Keep packages/shared/dist (needed for deployment)
+# packages/shared/dist/
 
 # Environment files
 .env
