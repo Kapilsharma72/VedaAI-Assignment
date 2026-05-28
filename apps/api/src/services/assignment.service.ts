@@ -3,11 +3,12 @@ import type { IAssignment, CreateAssignmentDto } from '@vedaai/shared';
 import { Assignment, type IAssignmentDocument } from '../models/assignment.model';
 import { GeneratedPaper } from '../models/paper.model';
 import redis from '../config/redis';
-import env from '../config/env';
 import logger from '../config/logger';
+import { getBullMQConnection } from '../config/redis.config';
 import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
+
 const questionGenerationQueue = new Queue('question-generation', {
-    connection: { url: env.REDIS_URL },
+  connection: getBullMQConnection(),
 });
 function toIAssignment(doc: IAssignmentDocument): IAssignment {
     const obj = doc.toObject({ versionKey: false });

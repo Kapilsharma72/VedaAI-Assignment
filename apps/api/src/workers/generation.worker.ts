@@ -3,8 +3,8 @@ import type { IGeneratedPaper } from '@vedaai/shared';
 import { Assignment } from '../models/assignment.model';
 import { GeneratedPaper } from '../models/paper.model';
 import redis from '../config/redis';
-import env from '../config/env';
 import logger from '../config/logger';
+import { getBullMQConnection } from '../config/redis.config';
 import { getIO } from '../sockets/index';
 import { buildPrompt } from './prompt.builder';
 import * as gemini from './gemini.client';
@@ -268,8 +268,8 @@ async function processGenerationJob(job: Job<GenerationJobData>): Promise<void> 
     });
 }
 export const generationWorker = new Worker<GenerationJobData>('question-generation', processGenerationJob, {
-    connection: { url: env.REDIS_URL },
-    concurrency: 1,
+  connection: getBullMQConnection(),
+  concurrency: 1,
 });
 generationWorker.on('active', (job) => {
     logger.info('Generation worker: job active', {

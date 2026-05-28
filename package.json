@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build:api": "npm run build -w @vedaai/shared && npm run build -w @vedaai/api",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "clean": "turbo run clean"
