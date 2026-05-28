@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { setFrontendSession } from '@/lib/session';
+import { saveAuthToken } from '@/lib/auth-token';
 import { useAuthStore } from '@/store/auth.store';
 import type { IUser } from '@vedaai/shared';
 export default function AuthCallbackClient() {
@@ -20,6 +21,7 @@ export default function AuthCallbackClient() {
         (async () => {
             try {
                 await setFrontendSession(token);
+                saveAuthToken(token);
                 const user = (await api.get('/api/auth/me')) as IUser;
                 if (!cancelled) {
                     setUser(user);

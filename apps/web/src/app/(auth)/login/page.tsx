@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import api, { ApiError } from '@/lib/api';
 import { setFrontendSession } from '@/lib/session';
+import { saveAuthToken } from '@/lib/auth-token';
 import { useAuthStore } from '@/store/auth.store';
 import type { IUser } from '@vedaai/shared';
 interface AuthResponse {
@@ -30,6 +31,7 @@ export default function LoginPage() {
         try {
             const { user, token } = (await api.post('/api/auth/login', data)) as AuthResponse;
             await setFrontendSession(token);
+            saveAuthToken(token);
             setUser(user);
             router.push('/assignments');
         }

@@ -24,6 +24,7 @@ if (!frontendUrl || frontendUrl.trim() === '') {
 app.use(cors({
     origin: frontendUrl && frontendUrl.trim() !== '' ? frontendUrl : false,
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
