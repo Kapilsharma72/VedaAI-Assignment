@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && npm install && npx turbo run build --filter=@vedaai/web",
-  "installCommand": "cd ../.. && npm install"
+  "installCommand": "cd ../.. && npm install --include=dev",
+  "buildCommand": "cd ../.. && npx turbo run build --filter=@vedaai/web"
 }
