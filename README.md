@@ -2,7 +2,8 @@
 
 Web app for teachers to create CBSE-style question papers with AI. You sign up, fill in a short form (subject, class, question types, marks), and Gemini generates a structured paper you can view in the browser and download as PDF.
 
-**Live frontend:** https://veda-ai-assignment-nu.vercel.app
+**Live app:** https://veda-ai-assignment-nu.vercel.app  
+**Live API:** https://vedaai-api-xdg3.onrender.com
 
 ## What’s in the repo
 
