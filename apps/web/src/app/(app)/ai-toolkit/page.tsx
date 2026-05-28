@@ -1,10 +1,7 @@
 'use client';
-
 import AppLayout from '@/components/layout/AppLayout';
-
 export default function AIToolkitPage() {
-  return (
-    <AppLayout title="AI Toolkit">
+    return (<AppLayout title="AI Toolkit">
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <div className="text-5xl mb-4">✨</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">AI Toolkit</h1>
@@ -13,6 +10,5 @@ export default function AIToolkitPage() {
           This feature is coming soon.
         </p>
       </div>
-    </AppLayout>
-  );
+    </AppLayout>);
 }

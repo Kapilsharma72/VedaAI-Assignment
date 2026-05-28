@@ -1,7 +1,3 @@
-/**
- * Jest global setup — sets required environment variables before any test
- * module is loaded, so env.ts validation passes without real infrastructure.
- */
 process.env['MONGO_URI'] = 'mongodb://localhost:27017/test';
 process.env['REDIS_URL'] = 'redis://localhost:6379';
 process.env['JWT_SECRET'] = 'test-secret-for-jest-tests-minimum-32chars';

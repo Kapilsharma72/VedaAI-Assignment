@@ -1,60 +1,49 @@
 import { IAssignment } from '@vedaai/shared';
-
 export function sanitizeForPrompt(input: string): string {
-  return input
-    .replace(/[`\\]/g, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    return input
+        .replace(/[`\\]/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 }
-
 export function buildPrompt(assignment: IAssignment): string {
-  const subject = sanitizeForPrompt(assignment.subject);
-  const cls = sanitizeForPrompt(assignment.class);
-  const schoolName = sanitizeForPrompt(assignment.schoolName);
-  const instructions = assignment.instructions
-    ? sanitizeForPrompt(assignment.instructions)
-    : '';
-  const additionalInfo = assignment.additionalInfo
-    ? sanitizeForPrompt(assignment.additionalInfo)
-    : '';
-
-  const questionTypeLines = assignment.questionTypes
-    .map(
-      (qt) =>
-        `  - ${sanitizeForPrompt(qt.type)}: ${qt.count} question${qt.count !== 1 ? 's' : ''}, ${qt.marks} mark${qt.marks !== 1 ? 's' : ''} each`
-    )
-    .join('\n');
-
-  let referenceMaterial = '';
-  if (assignment.uploadedFileText) {
-    const sanitizedText = sanitizeForPrompt(assignment.uploadedFileText);
-    referenceMaterial = `
+    const subject = sanitizeForPrompt(assignment.subject);
+    const cls = sanitizeForPrompt(assignment.class);
+    const schoolName = sanitizeForPrompt(assignment.schoolName);
+    const instructions = assignment.instructions
+        ? sanitizeForPrompt(assignment.instructions)
+        : '';
+    const additionalInfo = assignment.additionalInfo
+        ? sanitizeForPrompt(assignment.additionalInfo)
+        : '';
+    const questionTypeLines = assignment.questionTypes
+        .map((qt) => `  - ${sanitizeForPrompt(qt.type)}: ${qt.count} question${qt.count !== 1 ? 's' : ''}, ${qt.marks} mark${qt.marks !== 1 ? 's' : ''} each`)
+        .join('\n');
+    let referenceMaterial = '';
+    if (assignment.uploadedFileText) {
+        const sanitizedText = sanitizeForPrompt(assignment.uploadedFileText);
+        referenceMaterial = `
 REFERENCE MATERIAL (extracted from uploaded document):
 ---
 ${sanitizedText}
 ---`;
-  } else if (assignment.uploadedFileUrl) {
-    const sanitizedUrl = sanitizeForPrompt(assignment.uploadedFileUrl);
-    referenceMaterial = `
+    }
+    else if (assignment.uploadedFileUrl) {
+        const sanitizedUrl = sanitizeForPrompt(assignment.uploadedFileUrl);
+        referenceMaterial = `
 REFERENCE MATERIAL (uploaded file URL):
 ${sanitizedUrl}`;
-  }
-
-  const instructionsSection =
-    instructions.length > 0
-      ? `
+    }
+    const instructionsSection = instructions.length > 0
+        ? `
 TEACHER INSTRUCTIONS:
 ${instructions}`
-      : '';
-
-  const additionalInfoSection =
-    additionalInfo.length > 0
-      ? `
+        : '';
+    const additionalInfoSection = additionalInfo.length > 0
+        ? `
 ADDITIONAL INFORMATION:
 ${additionalInfo}`
-      : '';
-
-  const prompt = `You are an expert CBSE (Central Board of Secondary Education) question paper creator for Indian schools. Generate a complete, curriculum-aligned question paper based on the following assignment configuration.
+        : '';
+    const prompt = `You are an expert CBSE (Central Board of Secondary Education) question paper creator for Indian schools. Generate a complete, curriculum-aligned question paper based on the following assignment configuration.
 
 ASSIGNMENT DETAILS:
 - School Name: ${schoolName}
@@ -101,6 +90,5 @@ Respond with ONLY a valid JSON object — no markdown, no code fences, no explan
    - "answer": The correct answer or model answer
 
 Generate all questions now. Ensure the total number of questions and marks exactly match the requirements specified above.`;
-
-  return sanitizeForPrompt(prompt);
+    return sanitizeForPrompt(prompt);
 }
