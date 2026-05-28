@@ -6,114 +6,163 @@ import redis from '../config/redis';
 import logger from '../config/logger';
 import { getBullMQConnection } from '../config/redis.config';
 import { NotFoundError, ForbiddenError, ConflictError } from '../utils/errors';
+import { HttpError } from '../utils/errors';
+
+const QUEUE_ADD_TIMEOUT_MS = 15000;
 
 const questionGenerationQueue = new Queue('question-generation', {
   connection: getBullMQConnection(),
 });
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    }),
+  ]);
+}
+
 function toIAssignment(doc: IAssignmentDocument): IAssignment {
-    const obj = doc.toObject({ versionKey: false });
-    return {
-        _id: obj._id.toString(),
-        userId: obj.userId.toString(),
-        title: obj.title,
-        subject: obj.subject,
-        class: obj.class,
-        schoolName: obj.schoolName,
-        dueDate: obj.dueDate,
-        timeAllowed: obj.timeAllowed,
-        instructions: obj.instructions ?? '',
-        additionalInfo: obj.additionalInfo ?? '',
-        questionTypes: obj.questionTypes,
-        uploadedFileUrl: obj.uploadedFileUrl ?? null,
-        uploadedFileText: obj.uploadedFileText ?? null,
-        status: obj.status,
-        jobId: obj.jobId ?? null,
-        createdAt: obj.createdAt,
-        updatedAt: obj.updatedAt,
-    };
+  const obj = doc.toObject({ versionKey: false });
+  return {
+    _id: obj._id.toString(),
+    userId: obj.userId.toString(),
+    title: obj.title,
+    subject: obj.subject,
+    class: obj.class,
+    schoolName: obj.schoolName,
+    dueDate: obj.dueDate,
+    timeAllowed: obj.timeAllowed,
+    instructions: obj.instructions ?? '',
+    additionalInfo: obj.additionalInfo ?? '',
+    questionTypes: obj.questionTypes,
+    uploadedFileUrl: obj.uploadedFileUrl ?? null,
+    uploadedFileText: obj.uploadedFileText ?? null,
+    status: obj.status,
+    jobId: obj.jobId ?? null,
+    createdAt: obj.createdAt,
+    updatedAt: obj.updatedAt,
+  };
 }
+
 function assertOwnership(assignment: IAssignmentDocument, userId: string): void {
-    if (assignment.userId.toString() !== userId) {
-        throw new ForbiddenError('You do not have permission to access this assignment.');
-    }
+  if (assignment.userId.toString() !== userId) {
+    throw new ForbiddenError('You do not have permission to access this assignment.');
+  }
 }
+
 export async function create(userId: string, dto: CreateAssignmentDto): Promise<IAssignment> {
-    const doc = await Assignment.create({
-        userId,
-        title: dto.title,
-        subject: dto.subject,
-        class: dto.class,
-        schoolName: dto.schoolName,
-        dueDate: new Date(dto.dueDate),
-        timeAllowed: dto.timeAllowed,
-        instructions: dto.instructions ?? '',
-        additionalInfo: dto.additionalInfo ?? '',
-        questionTypes: dto.questionTypes,
-        uploadedFileUrl: dto.uploadedFileUrl ?? null,
-        uploadedFileText: dto.uploadedFileText ?? null,
-        status: 'pending',
-        jobId: null,
-    });
-    const assignmentId = doc._id.toString();
-    const job = await questionGenerationQueue.add('generate-questions', { assignmentId }, { jobId: assignmentId });
+  const doc = await Assignment.create({
+    userId,
+    title: dto.title,
+    subject: dto.subject,
+    class: dto.class,
+    schoolName: dto.schoolName,
+    dueDate: new Date(dto.dueDate),
+    timeAllowed: dto.timeAllowed,
+    instructions: dto.instructions ?? '',
+    additionalInfo: dto.additionalInfo ?? '',
+    questionTypes: dto.questionTypes,
+    uploadedFileUrl: dto.uploadedFileUrl ?? null,
+    uploadedFileText: dto.uploadedFileText ?? null,
+    status: 'pending',
+    jobId: null,
+  });
+
+  const assignmentId = doc._id.toString();
+
+  try {
+    const job = await withTimeout(
+      questionGenerationQueue.add(
+        'generate-questions',
+        { assignmentId },
+        { jobId: assignmentId, removeOnComplete: true, removeOnFail: false },
+      ),
+      QUEUE_ADD_TIMEOUT_MS,
+      'Queue add',
+    );
+
     logger.info('BullMQ job enqueued', {
-        queue: 'question-generation',
-        jobId: job.id,
-        assignmentId,
-        userId,
+      queue: 'question-generation',
+      jobId: job.id,
+      assignmentId,
+      userId,
     });
+
     doc.jobId = job.id ?? null;
     await doc.save();
-    return toIAssignment(doc);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Redis queue unavailable';
+    logger.error('Failed to enqueue generation job', { assignmentId, error: message });
+
+    doc.status = 'failed';
+    await doc.save();
+
+    throw new HttpError(
+      503,
+      'Could not start AI generation. Redis is unreachable — check REDIS_URL on the server.',
+    );
+  }
+
+  return toIAssignment(doc);
 }
+
 export async function list(userId: string): Promise<IAssignment[]> {
-    const docs = await Assignment.find({ userId }).sort({ createdAt: -1 });
-    return docs.map(toIAssignment);
+  const docs = await Assignment.find({ userId }).sort({ createdAt: -1 });
+  return docs.map(toIAssignment);
 }
+
 export async function getById(userId: string, assignmentId: string): Promise<IAssignment> {
-    const doc = await Assignment.findById(assignmentId);
-    if (!doc) {
-        throw new NotFoundError('Assignment not found.');
-    }
-    assertOwnership(doc, userId);
-    return toIAssignment(doc);
+  const doc = await Assignment.findById(assignmentId);
+  if (!doc) {
+    throw new NotFoundError('Assignment not found.');
+  }
+  assertOwnership(doc, userId);
+  return toIAssignment(doc);
 }
+
 export async function deleteById(userId: string, assignmentId: string): Promise<void> {
-    const doc = await Assignment.findById(assignmentId);
-    if (!doc) {
-        throw new NotFoundError('Assignment not found.');
-    }
-    assertOwnership(doc, userId);
-    await Assignment.deleteOne({ _id: assignmentId });
-    await GeneratedPaper.deleteOne({ assignmentId });
-    const cacheKey = `paper:${assignmentId}`;
-    await redis.del(cacheKey);
-    logger.info('Assignment deleted', {
-        assignmentId,
-        userId,
-        cacheKey,
-    });
+  const doc = await Assignment.findById(assignmentId);
+  if (!doc) {
+    throw new NotFoundError('Assignment not found.');
+  }
+  assertOwnership(doc, userId);
+  await Assignment.deleteOne({ _id: assignmentId });
+  await GeneratedPaper.deleteOne({ assignmentId });
+  const cacheKey = `paper:${assignmentId}`;
+  await redis.del(cacheKey);
+  logger.info('Assignment deleted', { assignmentId, userId, cacheKey });
 }
+
 export async function regenerate(userId: string, assignmentId: string): Promise<IAssignment> {
-    const doc = await Assignment.findById(assignmentId);
-    if (!doc) {
-        throw new NotFoundError('Assignment not found.');
-    }
-    assertOwnership(doc, userId);
-    if (doc.status === 'pending' || doc.status === 'processing') {
-        throw new ConflictError('Generation is already in progress for this assignment.');
-    }
-    doc.status = 'pending';
-    doc.jobId = null;
-    await doc.save();
-    const job = await questionGenerationQueue.add('generate-questions', { assignmentId, isRegeneration: true });
-    logger.info('BullMQ regeneration job enqueued', {
-        queue: 'question-generation',
-        jobId: job.id,
-        assignmentId,
-        userId,
-    });
+  const doc = await Assignment.findById(assignmentId);
+  if (!doc) {
+    throw new NotFoundError('Assignment not found.');
+  }
+  assertOwnership(doc, userId);
+  if (doc.status === 'pending' || doc.status === 'processing') {
+    throw new ConflictError('Generation is already in progress for this assignment.');
+  }
+
+  doc.status = 'pending';
+  doc.jobId = null;
+  await doc.save();
+
+  try {
+    const job = await withTimeout(
+      questionGenerationQueue.add('generate-questions', { assignmentId, isRegeneration: true }),
+      QUEUE_ADD_TIMEOUT_MS,
+      'Queue add',
+    );
+
     doc.jobId = job.id ?? null;
     await doc.save();
-    return toIAssignment(doc);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Redis queue unavailable';
+    logger.error('Failed to enqueue regeneration job', { assignmentId, error: message });
+    throw new HttpError(503, 'Could not start regeneration. Redis is unreachable.');
+  }
+
+  return toIAssignment(doc);
 }

@@ -20,7 +20,7 @@ const createAssignmentSchema = Joi.object({
     }))
         .min(1)
         .required(),
-    uploadedFileUrl: Joi.string().uri().allow(null),
+    uploadedFileUrl: Joi.string().uri().allow(null, ''),
     uploadedFileText: Joi.string().allow(null, ''),
 });
 function formatJoiErrors(error: Joi.ValidationError): Record<string, string> {

@@ -5,6 +5,8 @@ export function getRedisOptions(): RedisOptions {
   const options: RedisOptions = {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    connectTimeout: 10000,
+    retryStrategy: (times) => Math.min(times * 200, 3000),
   };
 
   if (env.REDIS_URL.startsWith('rediss://')) {
@@ -14,7 +16,7 @@ export function getRedisOptions(): RedisOptions {
   return options;
 }
 
-export function getBullMQConnection(): { url: string } & RedisOptions {
+export function getBullMQConnection(): RedisOptions & { url: string } {
   return {
     url: env.REDIS_URL,
     ...getRedisOptions(),

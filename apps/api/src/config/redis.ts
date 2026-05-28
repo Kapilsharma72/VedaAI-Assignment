@@ -14,7 +14,10 @@ redis.on('ready', () => {
 });
 
 redis.on('error', (err: Error) => {
-  logger.error('Redis client error', { error: err.message });
+  logger.error('Redis client error', {
+    error: err.message || String(err),
+    stack: err.stack,
+  });
 });
 
 redis.on('close', () => {
