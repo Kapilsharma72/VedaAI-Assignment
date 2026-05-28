@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "VedaAI — AI-powered assessment creator monorepo",
+  "packageManager": "npm@11.8.0",
   "workspaces": [
     "apps/api",
     "apps/web",
