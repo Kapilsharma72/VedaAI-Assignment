@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-sidebar: #1a1f2e;
+  --color-accent: #6366f1;
+  --color-main-bg: #f8fafc;
+  --border-radius-card: 0.75rem;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  body {
+    background-color: var(--color-main-bg);
+    color: #0f172a;
+  }
+}
+
+@layer utilities {
+  .bg-sidebar {
+    background-color: var(--color-sidebar);
+  }
+
+  .bg-accent {
+    background-color: var(--color-accent);
+  }
+
+  .bg-main {
+    background-color: var(--color-main-bg);
+  }
+
+  .rounded-card {
+    border-radius: var(--border-radius-card);
+  }
+}

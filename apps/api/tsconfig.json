@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@vedaai/shared": ["../../packages/shared/dist/index.d.ts"],
+      "@vedaai/shared/*": ["../../packages/shared/dist/*"],
+      "@/*": ["./src/*"]
+    },
+    "lib": ["ES2022"],
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.spec.ts"]
+}
