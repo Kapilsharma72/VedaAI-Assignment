@@ -116,9 +116,15 @@ interface LiveGenerationViewProps {
     socketKey: number;
     onRegenerateStart: () => void;
 }
-function LiveGenerationView({ assignmentId, subject, socketKey: _socketKey, onRegenerateStart, }: LiveGenerationViewProps) {
+function LiveGenerationView({ assignmentId, subject, socketKey: _socketKey, onRegenerateStart, onComplete, }: LiveGenerationViewProps & { onComplete?: (paper: IGeneratedPaper) => void }) {
     const { progress, message, paper, error, isConnected, retryConnection } = useAssignmentSocket(assignmentId);
     const [isRetrying, setIsRetrying] = useState(false);
+
+    useEffect(() => {
+        if (paper) {
+            onComplete?.(paper);
+        }
+    }, [paper, onComplete]);
     const handleRetry = useCallback(async () => {
         setIsRetrying(true);
         try {
@@ -202,6 +208,10 @@ export default function AssignmentPage({ params }: AssignmentPageProps) {
         setAssignment((prev) => prev ? { ...prev, status: 'pending' } : prev);
         setSocketKey((k) => k + 1);
     }, []);
+    const handleGenerationComplete = useCallback((completedPaper: IGeneratedPaper) => {
+        setPaper(completedPaper);
+        setAssignment((prev) => (prev ? { ...prev, status: 'completed' } : prev));
+    }, []);
     const handleRetryFailed = useCallback(async () => {
         setIsRetrying(true);
         try {
@@ -251,7 +261,7 @@ export default function AssignmentPage({ params }: AssignmentPageProps) {
           <p className="mt-1 text-sm text-red-700">{fetchError}</p>
         </div>)}
 
-      {(assignment.status === 'pending' || assignment.status === 'processing') && (<LiveGenerationView key={socketKey} assignmentId={id} subject={subject} socketKey={socketKey} onRegenerateStart={handleRegenerateStart}/>)}
+      {(assignment.status === 'pending' || assignment.status === 'processing') && (<LiveGenerationView key={socketKey} assignmentId={id} subject={subject} socketKey={socketKey} onRegenerateStart={handleRegenerateStart} onComplete={handleGenerationComplete}/>)}
 
       {assignment.status === 'failed' && (<ErrorCard message="Question paper generation failed. Please retry to generate a new paper." onRetry={handleRetryFailed} isRetrying={isRetrying}/>)}
     </div>);
